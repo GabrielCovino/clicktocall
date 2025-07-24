@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Discador Net2Phone</title>
+  <script src="https://unpkg.com/@net2phone/dialer-sdk/dist/net2phone-dialer-sdk.umd.js"></script>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #f3f3f3; }
+    #net2phone-dialer { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="net2phone-dialer"></div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const numero = urlParams.get("numero") || "011965775393";
+
+    const dialer = new Net2PhoneDialer({
+      rootHtmlElement: document.getElementById("net2phone-dialer")
+    });
+
+    dialer.on("dialer.ready", () => {
+      dialer.placeCall({ to: numero });
+    });
+
+    dialer.on("call.started", () => {
+      fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.register", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          USER_ID: 44,
+          PHONE_NUMBER: numero,
+          TYPE: 2,
+          CALL_START_DATE: new Date().toISOString(),
+          CRM_CREATE: 1,
+          SHOW: 1
+        })
+      });
+    });
+
+    dialer.on("call.ended", () => {
+      fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          USER_ID: 44,
+          PHONE_NUMBER: numero,
+          CALL_DURATION: 30,
+          STATUS_CODE: 200,
+          FAILED_REASON: "",
+          RECORD_URL: "",
+          CRM_CREATE: 0,
+          SHOW: 1
+        })
+      });
+    });
+  </script>
+</body>
+</html>
