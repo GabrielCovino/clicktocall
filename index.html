@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Discador Net2Phone</title>
   <script src="https://unpkg.com/@net2phone/dialer-sdk/dist/net2phone-dialer-sdk.umd.js"></script>
-  <script src="https://cdn.bitrix24.com/bx24.js"></script>
   <style>
     body { margin: 0; font-family: sans-serif; background: #f3f3f3; }
     #net2phone-dialer { height: 100vh; }
@@ -14,63 +13,46 @@
   <div id="net2phone-dialer"></div>
 
   <script>
-    function iniciarDiscador(numero) {
-      const dialer = new Net2PhoneDialer({
-        rootHtmlElement: document.getElementById("net2phone-dialer")
+    const urlParams = new URLSearchParams(window.location.search);
+    const numero = urlParams.get("numero") || "011965775393";
+
+    const dialer = new Net2PhoneDialer({
+      rootHtmlElement: document.getElementById("net2phone-dialer")
+    });
+
+    dialer.on("dialer.ready", () => {
+      dialer.placeCall({ to: numero });
+    });
+
+    dialer.on("call.started", () => {
+      fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.register", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          USER_ID: 44,
+          PHONE_NUMBER: numero,
+          TYPE: 2,
+          CALL_START_DATE: new Date().toISOString(),
+          CRM_CREATE: 1,
+          SHOW: 1
+        })
       });
+    });
 
-      dialer.on("dialer.ready", () => {
-        dialer.placeCall({ to: numero });
-      });
-
-      dialer.on("call.started", () => {
-        fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.register", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            USER_ID: 44,
-            PHONE_NUMBER: numero,
-            TYPE: 2,
-            CALL_START_DATE: new Date().toISOString(),
-            CRM_CREATE: 1,
-            SHOW: 1
-          })
-        });
-      });
-
-      dialer.on("call.ended", () => {
-        fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.finish", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            USER_ID: 44,
-            PHONE_NUMBER: numero,
-            CALL_DURATION: 30,
-            STATUS_CODE: 200,
-            FAILED_REASON: "",
-            RECORD_URL: "",
-            CRM_CREATE: 0,
-            SHOW: 1
-          })
-        });
-      });
-    }
-
-    BX24.init(function () {
-      BX24.placement.info(function (placement) {
-        const contactId = placement.options.ID;
-
-        BX24.callMethod("crm.contact.get", { ID: contactId }, function (result) {
-          if (result.error()) {
-            console.error(result.error());
-            iniciarDiscador("011965775393"); // fallback
-            return;
-          }
-
-          const contact = result.data();
-          const phone = contact.HAS_PHONE === 'Y' ? contact.PHONE[0].VALUE : "011965775393";
-          iniciarDiscador(phone);
-        });
+    dialer.on("call.ended", () => {
+      fetch("https://fiscofy.bitrix24.com.br/rest/44/ubo12vzihqld2mpt/telephony.externalcall.finish", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          USER_ID: 44,
+          PHONE_NUMBER: numero,
+          CALL_DURATION: 30,
+          STATUS_CODE: 200,
+          FAILED_REASON: "",
+          RECORD_URL: "",
+          CRM_CREATE: 0,
+          SHOW: 1
+        })
       });
     });
   </script>
